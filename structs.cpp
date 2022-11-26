@@ -26,30 +26,34 @@ struct LR {
 };
 
 
-// value + two added characteristics used in minMaxQueue
-struct valMinMax {
-    int val, minV, maxV;
-    valMinMax(int v, int mi, int ma) {
-        val = v;
-        minV = mi;
-        maxV = ma;
+// Queue supporting characteristic (function must not be overloaded)
+template <typename T>
+struct valCh {
+    T val, ch;
+    valCh(T v, T nch) {
+        val = v, ch = nch;
     }
 };
 
-// queue with getting min and max for O(1)
-struct minMaxQueue {
-    stack<valMinMax> s1, s2;
+template <typename T>
+struct ChQueue {
+    stack<valCh<T>> s1, s2;
+    function<T(T, T)> func;
+    ChQueue<T>() = default;
+    explicit ChQueue<T>(function<T(T, T)> f) {
+        func = f;
+    }
     bool empty() {
         return s1.size() + s2.size() == 0;
     }
     unsigned size() {
         return s1.size() + s2.size();
     }
-    void push(int val) {
+    void push(T val) {
         if (s1.empty()) {
-            s1.push(valMinMax(val, val, val));
+            s1.push(valCh<T>(val, val));
         } else {
-            s1.push(valMinMax(val, min(val, s1.top().minV), max(val, s1.top().maxV)));
+            s1.push(valCh<T>(val, func(val, s1.top().ch)));
         }
     }
     void relocate() {
@@ -57,9 +61,9 @@ struct minMaxQueue {
             auto elem = s1.top();
             s1.pop();
             if (s2.empty()) {
-                s2.push(valMinMax(elem.val, elem.val, elem.val));
+                s2.push(valCh<T>(elem.val, elem.val));
             } else {
-                s2.push(valMinMax(elem.val, min(elem.val, s2.top().minV), max(elem.val, s2.top().maxV)));
+                s2.push(valCh<T>(elem.val, func(elem.val, s2.top().ch)));
             }
         }
     }
@@ -69,28 +73,19 @@ struct minMaxQueue {
         }
         s2.pop();
     }
-    int front() {
+    T front() {
         if (s2.empty()) {
             relocate();
         }
         return s2.top().val;
     }
-    int minElem() {
+    T funcRes() {
         if (s2.empty()) {
-            return s1.top().minV;
+            return s1.top().ch;
         } else if (s1.empty()) {
-            return s2.top().minV;
+            return s2.top().ch;
         } else {
-            return min(s1.top().minV, s2.top().minV);
-        }
-    }
-    int maxElem() {
-        if (s2.empty()) {
-            return s1.top().maxV;
-        } else if (s1.empty()) {
-            return s2.top().maxV;
-        } else {
-            return max(s1.top().maxV, s2.top().maxV);
+            return func(s1.top().ch, s2.top().ch);
         }
     }
 };
