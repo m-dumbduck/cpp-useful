@@ -79,6 +79,7 @@ struct Line {
     double a;
     double b;
     double c;
+    Line() {}
     Line(double a1, double b1, double c1) {
         a = a1;
         b = b1;
@@ -108,6 +109,118 @@ struct Line {
     pt LineIntersect(Line other) const {
         return {(b * other.c - other.b * c) / (a * other.b - b * other.a),
                 (other.c * a - c * other.a) / (b * other.a - other.b * a)};
+    }
+    bool IsParallel(Line other) const {
+        return a * other.b == b * other.a;
+    }
+    double DistToLine(Line other) const {
+        if (this->IsParallel(other)) {
+            pt point;
+            if (b != 0) {
+                point = pt(1, (-a - c) / b);
+            } else {
+                point = pt((-b - c) / a, 1);
+            }
+            return other.DistToPoint(point);
+        }
+        return 0;
+    }
+};
+
+struct Ray {
+    pt f, s;
+    Line line;
+    Ray() {}
+    Ray(pt first, pt second) {
+        f = first, s = second, line = Line(first, second);
+    }
+    double DistToPoint(pt point) const {
+        Line perpLineF = line.PerpendicularLine(f);
+        pt cross = line.LineIntersect(line.PerpendicularLine(point));
+        if (perpLineF.PointHalfPlain(s) == perpLineF.PointHalfPlain(cross) ||
+            perpLineF.PointHalfPlain(f) == perpLineF.PointHalfPlain(cross)) {
+            return pt(cross, point).Len();
+        } else {
+            return pt(f, point).Len();
+        }
+    }
+    bool HasRayIntersection(Ray other) const {
+        pt cross = line.LineIntersect(other.line);
+        Line thisPerpLineF = line.PerpendicularLine(f),
+                otherPerpLineF = other.line.PerpendicularLine(other.f);
+        return ((thisPerpLineF.PointHalfPlain(cross) == thisPerpLineF.PointHalfPlain(s) ||
+                thisPerpLineF.PointHalfPlain(cross) == thisPerpLineF.PointHalfPlain(f)) &&
+                (otherPerpLineF.PointHalfPlain(cross) == otherPerpLineF.PointHalfPlain(other.s) ||
+                 otherPerpLineF.PointHalfPlain(cross) == otherPerpLineF.PointHalfPlain(other.f)));
+    }
+    bool HasLineIntersection(Line l) const {
+        pt cross = line.LineIntersect(l);
+        Line thisPerpLineF = line.PerpendicularLine(f);
+        return (thisPerpLineF.PointHalfPlain(cross) == thisPerpLineF.PointHalfPlain(s) ||
+                thisPerpLineF.PointHalfPlain(cross) == thisPerpLineF.PointHalfPlain(f));
+    }
+    double DistToRay(Ray other) const {
+        if (this->HasRayIntersection(other)) {
+            return 0;
+        }
+        return min(this->DistToPoint(other.f), other.DistToPoint(f));
+    }
+    double DistToLine(Line l) const {
+        if (this->HasLineIntersection(l)) {
+            return 0;
+        }
+        return l.DistToPoint(f);
+    }
+};
+
+struct Segment {
+    pt f, s;
+    Line line;
+    Segment() {}
+    Segment(pt f1, pt s1) {
+        f = f1, s = s1, line = Line(f1, s1);
+    }
+    double DistToPoint(pt point) const {
+        pt cross = line.LineIntersect(line.PerpendicularLine(point));
+        if (pt(cross, f).Len() <= pt(f, s).Len() &&
+            pt(cross, s).Len() <= pt(f, s).Len()) {
+            return pt(cross, point).Len();
+        } else {
+            return min(pt(point, f).Len(), pt(point, s).Len());
+        }
+    }
+    bool HasSegmentIntersection(Segment other) const {
+        Ray r1 = Ray(f, s), r2 = Ray(s, f), r3 = Ray(other.f, other.s),
+                    r4 = Ray(other.s, other.f);
+        return r1.HasRayIntersection(r3) && r1.HasRayIntersection(r4) &&
+                r2.HasRayIntersection(r3) && r2.HasRayIntersection(r4);
+    }
+    bool HasRayIntersection(Ray ray) const {
+        Ray r1 = Ray(f, s), r2 = Ray(s, f);
+        return r1.HasRayIntersection(ray) && r2.HasRayIntersection(ray);
+    }
+    bool HasLineIntersection(Line l) const {
+        Ray r1 = Ray(f, s), r2 = Ray(s, f);
+        return r1.HasLineIntersection(l) && r2.HasLineIntersection(l);
+    }
+    double DistToSegment(Segment other) const {
+        if (this->HasSegmentIntersection(other)) {
+            return 0;
+        }
+        return min(min(this->DistToPoint(other.f), this->DistToPoint(other.s)),
+                    min(other.DistToPoint(f), other.DistToPoint(s)));
+    }
+    double DistToRay(Ray ray) const {
+        if (this->HasRayIntersection(ray)) {
+            return 0;
+        }
+        return min(min(ray.DistToPoint(f), ray.DistToPoint(s)), this->DistToPoint(ray.f));
+    }
+    double DistToLine(Line l) const {
+        if (this->HasLineIntersection(l)) {
+            return 0;
+        }
+        return min(l.DistToPoint(f), l.DistToPoint(s));
     }
 };
  
