@@ -12,6 +12,8 @@
 
 using namespace std;
 
+#define setpr setprecision(15)
+
 typedef int64_t ll;
 typedef uint64_t ull;
 typedef __int128_t bll;

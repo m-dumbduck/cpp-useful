@@ -32,7 +32,7 @@ class Timer {
             begin = chrono::system_clock::now();
         }
         ~Timer() {
-            cout << hint << " " << (chrono::system_clock::now() - begin) / 1ms;
+            cout << hint << " " << (chrono::system_clock::now() - begin) / 1ms << "\n";
         }
 };
 
