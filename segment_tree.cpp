@@ -20,21 +20,21 @@ typedef __int128_t bll;
 
 
 int N;
-vector<int> tree, a;
+vector<int> tree;
 int NEUTRAL = 0;
 
 int merge(int v1, int v2) {
     return v1 + v2;
 }
 
-void buildTree(int v, int l, int r) {
+void buildTree(int v, int l, int r, vector<int>& a) {
     if (l == r - 1) {
         tree[v] = a[l];
         return;
     }
     int m = (l + r) / 2;
-    buildTree(2 * v + 1, l, m);
-    buildTree(2 * v + 2, m, r);
+    buildTree(2 * v + 1, l, m, a);
+    buildTree(2 * v + 2, m, r, a);
     tree[v] = merge(tree[2 * v + 1], tree[2 * v + 2]);
 }
 
@@ -54,16 +54,17 @@ int getTree(int v, int l, int r, int ql, int qr) {
     if (ql <= l && qr >= r) {
         return tree[v];
     }
-    if (l > qr || r < ql) {
+    if (l >= qr || r <= ql) {
         return NEUTRAL;
     }
     int m = (l + r) / 2;
-    return getTree( 2* v + 1, l, m, ql, qr) + getTree(2 * v + 2, m, r, ql, qr);
+    return merge(getTree( 2 * v + 1, l, m, ql, qr), getTree(2 * v + 2, m, r, ql, qr));
 }
 
 void updTree(int v, int l, int r, int pos, int val) {
     if (l == r - 1) {
         tree[v] += val;
+        return;
     }
     int m = (l + r) / 2;
     if (m > pos) {
@@ -74,9 +75,9 @@ void updTree(int v, int l, int r, int pos, int val) {
     tree[v] = merge(tree[2 * v + 1], tree[2 * v + 2]);
 }
 
-void build(vector<int>& vec) { N = vec.size(); tree.resize(4 * N, NEUTRAL); buildTree(0, 0, N); }
-void getOne(int pos) { getOneTree(0, 0, N, pos); }
-void get(int ql, int qr) { getTree(0, 0, N, ql, qr); }
+void build(vector<int>& vec) { N = vec.size(); tree.resize(4 * N, NEUTRAL); buildTree(0, 0, N, vec); }
+int getOne(int pos) { return getOneTree(0, 0, N, pos); }
+int get(int ql, int qr) { return getTree(0, 0, N, ql, qr); }
 void upd(int pos, int val) { updTree(0, 0, N, pos, val); }
 
 
